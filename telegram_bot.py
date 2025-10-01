@@ -27,7 +27,7 @@ async def download_short(video_url: str) -> str | None:
         "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "outtmpl": os.path.join(DOWNLOAD_DIR, "%(id)s.%(ext)s"),
         "noplaylist": True,
-        "match_filter": lambda info: info.get("duration", 0) < 61,
+        "match_filter": lambda info: None if info.get("duration", 0) < 61 else "The video is not a short (too long).",
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -80,7 +80,9 @@ async def main():
     # --- Main Loop ---
     while True:
         print("Checking for new shorts...")
-        latest_shorts = await get_latest_shorts(YOUTUBE_CHANNEL_URL)
+        # Append /shorts to the channel URL to specifically fetch from the shorts feed
+        shorts_feed_url = YOUTUBE_CHANNEL_URL.rstrip('/') + "/shorts"
+        latest_shorts = await get_latest_shorts(shorts_feed_url)
 
         for short_url in latest_shorts:
             if not short_url:
