@@ -54,7 +54,9 @@ async def get_latest_shorts(channel_url: str, limit: int = 5) -> list[str]:
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(channel_url, download=False)
-        return [entry["url"] for entry in info.get("entries", []) if entry]
+        # When using extract_flat, yt-dlp provides video IDs, not full URLs.
+        # We need to construct the URL manually.
+        return [f"https://www.youtube.com/watch?v={entry['id']}" for entry in info.get("entries", []) if entry and entry.get("id")]
 
 async def main():
     """
