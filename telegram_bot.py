@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 import telegram
 import yt_dlp
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID, YOUTUBE_CHANNEL_URL
@@ -39,24 +40,24 @@ async def download_short(video_url: str) -> str | None:
 async def get_latest_shorts(channel_url: str, limit: int = 5) -> list[str]:
     """
     Fetches the latest video URLs from a YouTube channel.
-
     Args:
         channel_url: The URL of the YouTube channel.
         limit: The maximum number of recent videos to check.
-
     Returns:
         A list of video URLs.
     """
     ydl_opts = {
-        "extract_flat": True,
+        # "extract_flat": True, # Removed to fetch full metadata for reliability
         "playlistend": limit,
         "quiet": True,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(channel_url, download=False)
-        # When using extract_flat, yt-dlp provides video IDs, not full URLs.
-        # We need to construct the URL manually.
-        return [f"https://www.youtube.com/watch?v={entry['id']}" for entry in info.get("entries", []) if entry and entry.get("id")]
+        return [
+            entry.get("webpage_url")
+            for entry in info.get("entries", [])
+            if entry and entry.get("webpage_url")
+        ]
 
 async def main():
     """
@@ -82,7 +83,16 @@ async def main():
         latest_shorts = await get_latest_shorts(YOUTUBE_CHANNEL_URL)
 
         for short_url in latest_shorts:
-            video_id = short_url.split("v=")[-1]
+            if not short_url:
+                continue
+
+            # Extract video ID using regex for robustness
+            match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11})", short_url)
+            if not match:
+                print(f"Could not extract video ID from {short_url}. Skipping.")
+                continue
+            video_id = match.group(1)
+
             if video_id not in processed_videos:
                 print(f"New short found: {short_url}")
                 video_path = await download_short(short_url)
