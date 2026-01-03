@@ -1,0 +1,7 @@
+aiogram>=3.0.0
+playwright
+taskiq
+taskiq-redis
+meilisearch
+beautifulsoup4
+redis
