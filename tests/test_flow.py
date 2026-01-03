@@ -9,8 +9,7 @@ class TestFlow(unittest.TestCase):
     @patch('app.tasks.Bot')
     @patch('app.tasks.OzonScraper')
     @patch('app.tasks.WBScraper')
-    @patch('app.tasks.YMScraper')
-    def test_search_task_flow(self, MockYM, MockWB, MockOzon, MockBot, MockStorage):
+    def test_search_task_flow(self, MockWB, MockOzon, MockBot, MockStorage):
         # Setup Mocks
 
         # Scrapers return dummy data
@@ -23,9 +22,6 @@ class TestFlow(unittest.TestCase):
         mock_ozon_instance.scrape = AsyncMock(return_value=[
             {"id": "ozon_1", "title": "Ozon Product", "price": 150, "source": "Ozon", "url": "http://ozon", "image_url": ""}
         ])
-
-        mock_ym_instance = MockYM.return_value
-        mock_ym_instance.scrape = AsyncMock(return_value=[])
 
         # Storage mock
         MockStorage.init_index = AsyncMock()

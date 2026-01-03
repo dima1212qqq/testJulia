@@ -18,7 +18,7 @@ bot = Bot(token=BOT_TOKEN)
 @dp.message(CommandStart())
 async def command_start_handler(message: types.Message):
     await message.answer(
-        "👋 Привет! Я агрегатор маркетплейсов (Ozon, WB, Yandex).\n"
+        "👋 Привет! Я агрегатор маркетплейсов (Ozon, WB).\n"
         "Напиши мне название товара, и я найду лучшие цены."
     )
 
@@ -39,7 +39,7 @@ async def search_handler(message: types.Message):
 
             text = f"⚡ **Найдено в кэше для '{query}':**\n\n"
             for p in cached_results:
-                source_icon = "🔵" if p['source'] == "Ozon" else "🟣" if p['source'] == "WB" else "🟡"
+                source_icon = "🔵" if p['source'] == "Ozon" else "🟣"
                 text += f"{source_icon} [{p['title']}]({p['url']})\n"
                 text += f"💰 **{p['price']:,.0f} ₽**\n\n"
 

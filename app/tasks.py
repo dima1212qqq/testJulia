@@ -4,7 +4,6 @@ from app.broker import broker
 from app.storage import storage
 from app.scrapers.ozon import OzonScraper
 from app.scrapers.wb import WBScraper
-from app.scrapers.ym import YMScraper
 from app.config import BOT_TOKEN
 from aiogram import Bot
 
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 async def perform_search(query: str, chat_id: int):
     """
     Task to perform search:
-    1. Scrape Ozon, WB, YM
+    1. Scrape Ozon, WB
     2. Save to Storage
     3. Notify User
     """
@@ -23,8 +22,7 @@ async def perform_search(query: str, chat_id: int):
     # 1. Scrape in parallel
     scrapers = [
         OzonScraper(headless=True),
-        WBScraper(headless=True),
-        YMScraper(headless=True)
+        WBScraper(headless=True)
     ]
 
     tasks = [scraper.scrape(query) for scraper in scrapers]
@@ -58,7 +56,7 @@ async def perform_search(query: str, chat_id: int):
 
         # Show top 5 cheapest
         for p in all_products[:5]:
-            source_icon = "🔵" if p['source'] == "Ozon" else "🟣" if p['source'] == "WB" else "🟡"
+            source_icon = "🔵" if p['source'] == "Ozon" else "🟣"
             text += f"{source_icon} [{p['title']}]({p['url']})\n"
             text += f"💰 **{p['price']:,.0f} ₽**\n\n"
 
