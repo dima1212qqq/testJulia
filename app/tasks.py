@@ -36,12 +36,13 @@ async def perform_search(query: str, chat_id: int):
             logger.error(f"Scraper error: {res}")
 
     # 2. Save to Storage (Meilisearch)
-    if all_products:
+    # Filter out fallback items from storage? Or store them but handle differently?
+    # Better to store only real products for caching purposes.
+    real_products = [p for p in all_products if not p.get('is_fallback')]
+    if real_products:
         try:
-            # Ensure index exists
             await storage.init_index()
-            # Add products
-            await storage.add_products(all_products)
+            await storage.add_products(real_products)
         except Exception as e:
             logger.error(f"Failed to save to storage: {e}")
 
@@ -49,16 +50,35 @@ async def perform_search(query: str, chat_id: int):
     if not all_products:
         text = f"По запросу '{query}' ничего не найдено на площадках :("
     else:
-        # Sort by price
-        all_products.sort(key=lambda x: x['price'])
+        # Sort: Real products first (by price), then fallback items
+        def sort_key(p):
+            is_fallback = p.get('is_fallback', False)
+            price = p['price'] if p['price'] > 0 else float('inf')
+            return (is_fallback, price)
+
+        all_products.sort(key=sort_key)
 
         text = f"🔎 **Результаты для '{query}':**\n\n"
 
-        # Show top 5 cheapest
-        for p in all_products[:5]:
+        # Show top 7 items
+        count = 0
+        for p in all_products:
+            if count >= 7: break
+
             source_icon = "🔵" if p['source'] == "Ozon" else "🟣"
+
+            # Format price
+            if p.get('is_fallback') or p['price'] == 0:
+                price_str = "👀 **Посмотреть на сайте**"
+            else:
+                price_str = f"💰 **{p['price']:,.0f} ₽**"
+
             text += f"{source_icon} [{p['title']}]({p['url']})\n"
-            text += f"💰 **{p['price']:,.0f} ₽**\n\n"
+            text += f"{price_str}\n"
+            if p.get('note'):
+                text += f"_{p['note']}_\n"
+            text += "\n"
+            count += 1
 
         text += f"Всего найдено: {len(all_products)} товаров."
 
